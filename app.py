@@ -1,12 +1,10 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
 import subprocess
 import tempfile
 import os
 import sys
 
 app = Flask(__name__)
-CORS(app)
 
 @app.route('/', methods=['GET'])
 def health_check():
@@ -22,8 +20,13 @@ def health_check():
 
 @app.route('/api/agent', methods=['POST', 'OPTIONS'])
 def handle_request():
+    # Add CORS headers manually
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'OK'}), 200
+        response = jsonify({'status': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        return response, 200
     
     try:
         if not request.is_json:
@@ -37,7 +40,10 @@ def handle_request():
         parameters = data.get('parameters', {})
 
         if tool_name == 'executeCode':
-            return execute_code(parameters)
+            response = execute_code(parameters)
+            # Add CORS headers
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response
         else:
             return jsonify({'error': f'Unknown tool: {tool_name}'}), 400
 
